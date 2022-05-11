@@ -43,7 +43,7 @@ async function run(){
         app.put('/products/:id', async(req,res)=>{
             const id = req.params.id;
             const updatedUser = req.body;
-            console.log(updatedUser)
+            // console.log(updatedUser)
             const filter = {_id:ObjectId(id)}
             const options = {upsert:true}
             const updateProduct = {
@@ -57,6 +57,14 @@ async function run(){
 
 
 
+        })
+
+        //Delete User 
+        app.delete('/products/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id: ObjectId(id)};
+            const result = await productsCollection.deleteOne(query)
+            res.send(result)
         })
 
     }finally{
