@@ -18,7 +18,8 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run(){
     try{
         await client.connect();
-        const productsCollection = client.db('gadget-db').collection('products')
+        const productsCollection = client.db('gadget-db').collection('products');
+        const myItemCollection = client.db('gadget-db').collection('myitem')
 
         //All Products Find
 
@@ -65,6 +66,31 @@ async function run(){
             const query = {_id: ObjectId(id)};
             const result = await productsCollection.deleteOne(query)
             res.send(result)
+        })
+
+        //Add New Service 
+
+        app.post('/products',async(req,res)=>{
+            const newProduct = req.body;
+            // console.log(newProduct)
+            const result = await productsCollection.insertOne(newProduct)
+            res.send(result)
+        })
+
+        //My Item collection 
+        app.post('/myitem', async(req,res)=>{
+            const myItem = req.body;
+            const result = await myItemCollection.insertOne(myItem)
+            res.send(result)
+        })
+
+        //Get My Items
+        app.get('/myitem',async(req,res)=>{
+            const email = req.query.email;
+            const query ={email:email}
+            const cursor = myItemCollection.find(query)
+            const orders = await cursor.toArray()
+            res.send(orders)
         })
 
     }finally{
