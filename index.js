@@ -111,7 +111,7 @@ async function run() {
             res.send(orders)
         })
         //Delete A My Item
-        app.delete('/myitem/:id', async (req, res) => {
+        app.delete('/myitem/:id',verifyJWT, async (req, res) => {
 
             const email = req.query.email;
             const id = req.params.id;
