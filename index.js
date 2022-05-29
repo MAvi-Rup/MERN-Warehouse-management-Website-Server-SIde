@@ -49,7 +49,7 @@ async function run() {
 
         // Get a Single Products
 
-        app.get('/products/:id', async (req, res) => {
+        app.get('/products/:id',verifyJWT, async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
             const product = await productsCollection.findOne(query)
@@ -103,7 +103,7 @@ async function run() {
         })
 
         //Get My Items
-        app.get('/myitem', async (req, res) => {
+        app.get('/myitem',verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
             const cursor = myItemCollection.find(query)
