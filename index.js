@@ -17,20 +17,21 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization;
-    console.log(authHeader)
+
     if (!authHeader) {
-      return res.status(401).send({ message: 'UnAuthorized access' });
+        return res.status(401).send({ message: 'unauthorized access' });
     }
     const token = authHeader.split(' ')[1];
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
-        console.log(err)
-      if (err) {
-        return res.status(403).send({ message: 'Forbidden access' })
-      }
-      req.decoded = decoded;
-      next();
-    });
-  }
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden access' });
+        }
+        console.log('decoded', decoded);
+        req.decoded = decoded;
+        next();
+    })
+}
 
 async function run() {
     try {
@@ -38,7 +39,7 @@ async function run() {
         const productsCollection = client.db('gadget-db').collection('products');
         const myItemCollection = client.db('gadget-db').collection('myitem')
         const myMessageCollection = client.db('gadget-db').collection('message')
-        const userCollection = client.db('gadget-db').collection('user')
+
 
         //All Products Find
 
@@ -51,11 +52,19 @@ async function run() {
 
         // Get a Single Products
 
-        app.get('/products/:id',verifyJWT, async (req, res) => {
+        app.get('/products/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
             const product = await productsCollection.findOne(query)
             res.send(product)
+        })
+
+        app.post('/login', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1d'
+            });
+            res.send({ accessToken });
         })
 
         //update product
@@ -104,20 +113,24 @@ async function run() {
             res.send(result)
         })
 
-        //Get My Items
+     
         app.get('/myitem',verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const email = req.query.email;
-            const query = { email: email }
-            const cursor = myItemCollection.find(query)
-            const orders = await cursor.toArray()
-            res.send(orders)
+            if (decodedEmail === email) {
+                const query = { email: email }
+                const cursor = myItemCollection.find(query)
+                const orders = await cursor.toArray()
+                res.send(orders)
+            }
         })
+  
         //Delete A My Item
-        app.delete('/myitem/:id',verifyJWT, async (req, res) => {
+        app.delete('/myitem/:id', async (req, res) => {
 
             const email = req.query.email;
             const id = req.params.id;
-            const query = { _id: ObjectId(id),email:email };
+            const query = { _id: ObjectId(id), email: email };
             const result = await myItemCollection.deleteOne(query)
             res.send(result)
         })
@@ -129,20 +142,6 @@ async function run() {
             res.send(result)
         })
 
-        //Add USer JWT
-
-        app.put('/user/:email', async (req, res) => {
-            const email = req.params.email;
-            const user = req.body;
-            const filter = { email: email };
-            const options = { upsert: true };
-            const updateDoc = {
-              $set: user,
-            };
-            const result = await userCollection.updateOne(filter, updateDoc, options);
-            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            res.send({ result, token });
-          });
 
     } finally {
 
